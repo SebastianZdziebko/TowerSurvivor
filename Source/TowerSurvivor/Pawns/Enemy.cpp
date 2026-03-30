@@ -192,10 +192,12 @@ void AEnemy::ApplyUpgrades(const int32 CurrentStage)
 {
 	if (EnemyStatsComp || CurrentStage == 0) return;
 
+	/*
 	for (int32 UpgradeLevel = 0; UpgradeLevel <= CurrentStage; UpgradeLevel++)
 	{
 		if (!Upgrades.IsValidIndex(UpgradeLevel) || !Upgrades[UpgradeLevel].IsValidUpgrade()) continue;
 
 		
 	}
+	*/
 }

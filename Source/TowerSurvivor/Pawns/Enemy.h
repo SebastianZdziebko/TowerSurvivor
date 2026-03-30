@@ -95,7 +95,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")	bool		bIsSwarm		{ false };
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat") float	AttackCooldown	{ 1.f };
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Upgrades") TMap<EStat, TArray<FEnemyUpgradeData>> Upgrades;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Upgrades") TMap<EStat, TArray<FEnemyUpgradeData>> Upgrades;
 
 protected:
 	virtual void BeginPlay() override;
