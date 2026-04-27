@@ -12,40 +12,26 @@ class TOWERSURVIVOR_API AProjectile : public AActor
 	TEnumAsByte<ECollisionChannel> EnemyChannel		{ ECC_GameTraceChannel2 };
 	TEnumAsByte<ECollisionChannel> ProjectileChannel{ ECC_GameTraceChannel4 };
 	
-	UPROPERTY() FVector TargetPosition = { FVector::ZeroVector };
-
 public:	
 	AProjectile();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class AEnemy*				Target;
+	UPROPERTY(BlueprintReadWrite) FVector TargetPosition = { FVector::ZeroVector };
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class USphereComponent*		CollisionComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)	class AActor*				Target;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)	class USphereComponent*		CollisionComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)	class UNiagaraComponent*	NiagaraComp;
+	UPROPERTY(EditAnywhere,	BlueprintReadOnly)	class UWeaponData*			WeaponData;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UNiagaraComponent*	NiagaraComp;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")	bool	bUseArc		{ false };
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Projectile")	int32	Damage		{ 0 };
 
-	UPROPERTY(VisibleAnywhere,	BlueprintReadOnly, Category = "Projectile")
-	class UWeaponData*			WeaponData			{ nullptr };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile", meta = (EditCondition = "bUseArc == true", EditConditionHides))	float ArcOffset				{ 0.f };
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Projectile", meta = (EditCondition = "bUseArc == true", EditConditionHides)) FVector OriginalPosition	{ FVector::ZeroVector};
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Projectile", meta = (EditCondition = "bUseArc == true", EditConditionHides)) float OriginalDistance		{ 0.f };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
-	bool bUseArc			{ false };
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile", meta = (EditCondition = "bUseArc == true", EditConditionHides))
-	float ArcOffset			{ 0.f };
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Projectile", meta = (EditCondition = "bUseArc == true", EditConditionHides))
-	FVector OriginalPosition{ FVector::ZeroVector};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Projectile", meta = (EditCondition = "bUseArc == true", EditConditionHides))
-	float OriginalDistance	{ 0.f };
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Bounce")
-	int32 RemainingBouces	{ 0 };
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Bounce")
-	TArray<AActor*> HittedEnemies;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Bounce") int32 RemainingBouces { 0 };
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Bounce") TArray<AActor*> HittedEnemies;
 
 protected:
 	virtual void BeginPlay() override;

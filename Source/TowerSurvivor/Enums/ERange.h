@@ -11,6 +11,6 @@ enum class ERange : uint8
 	Long		UMETA(DisplayName = "Long Range"),
 };
 
-inline constexpr float RangeValues[] = { 0.f, 500.f, 1000.f, 1500.f };
+inline constexpr float RangeValues[] = { 0.f, 400.f, 800.f, 1200.f };
 
 inline constexpr float RangeToFloat(ERange Range) { return RangeValues[static_cast<uint8>(Range)]; }

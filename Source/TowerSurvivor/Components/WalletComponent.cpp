@@ -1,6 +1,7 @@
 #include "WalletComponent.h"
 
 #include "TowerSurvivor/Widgets/IncomeWidget.h"
+#include "TowerSurvivor/Components/UpgradeSystemComponent.h"
 
 UWalletComponent::UWalletComponent()
 {
@@ -21,8 +22,13 @@ void UWalletComponent::BeginPlay()
 		true
 	);
 
-	PlayerController = GetWorld()->GetFirstPlayerController();
-	Owner			 = GetOwner();
+	UUpgradeSystemComponent* OwnerUpgradeComp = GetOwner()->FindComponentByClass<UUpgradeSystemComponent>();
+
+	if (IsValid(OwnerUpgradeComp))
+	{
+		OwnerUpgradeComp->OnIncomeUpgradeDelegate.AddUObject(this, &UWalletComponent::ManageIncomeUpgrade);
+		OwnerUpgradeComp->OnSingleUseUpgradeDelegate.AddUObject(this, &UWalletComponent::ManageSingleUse);
+	}
 }
 
 void UWalletComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -82,18 +88,23 @@ void UWalletComponent::ApplyIncome()
 	
 	if (!NewWidget) return;
 
-	CreatedWidgets.Add(NewWidget);
+	int32 OutIncome = CurrentIncome;
 
 	if (CurrentModifier > 0.f)
 	{
-		int32 OutIncome = ApplyModifier();
+		OutIncome = ApplyModifier();
 		NewWidget->CurrentIncome = OutIncome;
 	}
 	else NewWidget->CurrentIncome = CurrentIncome;
 
 	NewWidget->AddToViewport();
+	AActor* Owner = GetOwner();
 
-	if (!Owner || !PlayerController) return;
+	if (!IsValid(Owner)) return;
+
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+
+	if (!IsValid(PlayerController)) return;
 
 	FVector		OwnerLocation = Owner->GetActorLocation();
 	FVector2D	ScreenPosition;
@@ -104,5 +115,16 @@ void UWalletComponent::ApplyIncome()
 		NewWidget->SetPositionInViewport(ScreenPosition, true);
 	}
 
-	AddToWallet(CurrentIncome);
+	AddToWallet(OutIncome);
+}
+
+void UWalletComponent::ManageIncomeUpgrade(float Modifier, int32 FlatValue)
+{
+	IncreaseIncome(FlatValue);
+	IncreaseIncomeModifier(Modifier);
+}
+
+void UWalletComponent::ManageSingleUse(EStat /*Stat*/, int32 /*Cost*/, int32 Reward)
+{
+	if (Reward > 0) AddToWallet(Reward);
 }

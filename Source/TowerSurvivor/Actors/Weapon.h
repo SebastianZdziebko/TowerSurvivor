@@ -4,12 +4,14 @@
 #include "GameFramework/Actor.h"
 
 #include "TowerSurvivor/Interfaces/CombatInterface.h"
-#include "TowerSurvivor/Enums/ERange.h"
-#include "TowerSurvivor/Enums/ETargetType.h"
 
 #include "Weapon.generated.h"
 
 class UWeaponData;
+
+enum class ERange : uint8;
+enum class ETargetType : uint8;
+enum class EWeaponType : uint8;
 
 UCLASS()
 class TOWERSURVIVOR_API AWeapon : public AActor
@@ -33,10 +35,12 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	void FireWeapon(AActor* Target);
+	void	FireWeapon(AActor* Target, float DamageModifier);
+	int32	ApplyModifier(int32 BaseValue, float Modifier);
 
 	void		SetReady();
 	float		GetWeaponCooldown();
 	int32		GetNumberOfTargets();
 	ERange		GetWeaponRange();
+	EWeaponType GetWeaponType();
 };

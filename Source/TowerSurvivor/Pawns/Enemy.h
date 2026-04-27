@@ -20,6 +20,9 @@ DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE(
 	OnEnemyDestroy
 );
 
+class UFloatingPawnMovement;
+class USphereComponent;
+
 USTRUCT(BlueprintType)
 struct FEnemyUpgradeData
 {
@@ -76,34 +79,29 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UStatsComponent*				EnemyStatsComp;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UEnemyMovementComponent*		MovementComp;
-
 	UPROPERTY(EditAnywhere)
-	class USphereComponent*				CollisionComp;
+	USphereComponent*					CollisionComp;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	USkeletalMeshComponent*				SkeletalMeshComp;
+
+	UPROPERTY(EditAnywhere)
+	UFloatingPawnMovement*				MovementComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UWidgetComponent*				HealthBarWidget;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Behavior") EEnemyState EnemyState { EEnemyState::None };
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Behavior")	 float		 FallOffset	{ 0.f };
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Behavior") EEnemyState EnemyState		{ EEnemyState::None };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Behavior")	 float		 FallOffset		{ 0.f };
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Behavior")	 float		 SinkThreshold	{ 200.f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")	FVector		SpawnOffset		{ FVector::ZeroVector };
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")	bool		bIsSwarm		{ false };
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat") float	AttackCooldown	{ 1.f };
 
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Upgrades") TMap<EStat, TArray<FEnemyUpgradeData>> Upgrades;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat") float		AttackCooldown	{ 1.f };
 
 protected:
 	virtual void BeginPlay() override;
-
-	UFUNCTION()
-	void TowerIsInRange(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-						UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-						bool bFromSweep, const FHitResult& SweepResult);
 
 public:	
 	virtual void Tick(float DeltaTime) override;
@@ -120,6 +118,10 @@ public:
 	UFUNCTION()						void OverlapGround(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 													   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 											   		   bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION(BlueprintCallable)	void TowerIsInRange(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+														UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+														bool bFromSweep, const FHitResult& SweepResult);
 
 
 	UFUNCTION(BlueprintCallable)	void SetEnemyState(EEnemyState NewState);

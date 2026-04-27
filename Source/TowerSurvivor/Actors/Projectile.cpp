@@ -34,9 +34,15 @@ void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
-	RemainingBouces  = WeaponData->NumberOfBouces;
+	if(WeaponData)
+		RemainingBouces  = WeaponData->NumberOfBouces;
 
-	Target->OnEnemyDeath.AddDynamic(this, &AProjectile::RemoveTarget);
+	if (AEnemy* TargetEnemy = Cast<AEnemy>(Target))
+		TargetEnemy->OnEnemyDeath.AddDynamic(this, &AProjectile::RemoveTarget);
+
+	if (!Target) return; 
+	
+	TargetPosition = Target->GetActorLocation();
 }
 
 void AProjectile::Tick(float DeltaTime)
@@ -52,7 +58,7 @@ void AProjectile::OverlapTarget(UPrimitiveComponent* OverlappedComponent, AActor
 
 	if (!OtherActor->Implements<UCombatInterface>()) return;
 
-	if (IsValid(OtherActor) && OtherActor == Target && !HittedEnemies.Contains(OtherActor))
+	if (OtherActor == Target && !HittedEnemies.Contains(OtherActor))
 		OnProjectileHit(OtherActor);
 }
 
@@ -122,16 +128,20 @@ void AProjectile::RemoveTarget(AEnemy* DestroyedTarget)
 
 void AProjectile::OnProjectileHit_Implementation(AActor* OtherActor)
 {
-	HittedEnemies.Add(OtherActor);
-	ICombatInterface::Execute_TakeDamage(OtherActor, WeaponData->Damage);
+	if (OtherActor->IsA<AEnemy>())
+		HittedEnemies.Add(OtherActor);
+
+	ICombatInterface::Execute_TakeDamage(OtherActor, Damage);
 }
 
 void AProjectile::MoveTowardsTarget(float DeltaTime)
 {
-	if (IsValid(Target)) TargetPosition = Target->GetActorLocation();
-
 	const FVector CurrentPosition	= GetActorLocation();
-	const FVector Direction			= (TargetPosition - CurrentPosition).GetSafeNormal();
+
+	FVector AimPosition	 = TargetPosition;
+	AimPosition.Z		 = CurrentPosition.Z;
+
+	const FVector Direction	= (AimPosition - CurrentPosition).GetSafeNormal();
 
 	float	Speed			= WeaponData->Speed;
 	FVector NewPosition		= CurrentPosition + Direction * Speed * DeltaTime;

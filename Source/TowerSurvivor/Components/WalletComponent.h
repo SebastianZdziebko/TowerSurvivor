@@ -6,13 +6,12 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWalletChangeSignature, int32, CurrentWallet);
 
+enum class EStat : uint8;
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TOWERSURVIVOR_API UWalletComponent : public UActorComponent
 {
 	GENERATED_BODY()
-
-	AActor*			   Owner;
-	APlayerController* PlayerController;
 
 	FTimerHandle IncomeHandle;
 
@@ -20,9 +19,7 @@ public:
 	UWalletComponent();
 
 	UPROPERTY(BlueprintAssignable) FOnWalletChangeSignature OnWalletChangeDelegate;
-
 	UPROPERTY(EditAnywhere) TSubclassOf<UUserWidget> IncomeWidget;
-	UPROPERTY()				TArray<UUserWidget*>	 CreatedWidgets;
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)		int32 Wallet			{ 0 };
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)		int32 CurrentIncome		{ 0 };
@@ -41,4 +38,7 @@ public:
 	UFUNCTION(BlueprintCallable) bool	CheckWallet				(int32 Cost);
 	UFUNCTION(BlueprintCallable) int32	ApplyModifier			();
 	UFUNCTION()	void ApplyIncome();
+
+	void ManageIncomeUpgrade(float Modifier, int32 FlatValue);
+	void ManageSingleUse(EStat Stat, int32 Cost, int32 Reward);
 };

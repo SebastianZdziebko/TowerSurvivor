@@ -4,7 +4,10 @@
 
 #include "TowerSurvivor/Pawns/Enemy.h"
 #include "TowerSurvivor/Actors/Weapon.h"
+
 #include "TowerSurvivor/Enums/ETargetType.h"
+#include "TowerSurvivor/Enums/EWeaponType.h"
+#include "TowerSurvivor/Enums/ERange.h"
 
 UWeaponSystemComponent::UWeaponSystemComponent()
 {
@@ -143,6 +146,16 @@ void UWeaponSystemComponent::AddWeapon(TSubclassOf<AWeapon> WeaponToAdd)
 	SetWeaponReadyToFire(SpawnedWeapon);
 }
 
+void UWeaponSystemComponent::IncreaseModifier(EWeaponType ModifierToIncrease, float Modifier)
+{
+	if (ModifierToIncrease == EWeaponType::None || Modifier <= 0.f) return;
+
+	if (float* FoundModifier = Modifiers.Find(ModifierToIncrease))
+		*FoundModifier += Modifier;
+	else
+		Modifiers.Add(ModifierToIncrease, Modifier);
+}
+
 void UWeaponSystemComponent::SetupWeaponCooldown(AWeapon* WeaponToSetup)
 {
 	FTimerHandle	WeaponTimerHandle = WeaponToSetup->WeaponCooldownHandle;
@@ -172,7 +185,13 @@ void UWeaponSystemComponent::FireWeaponToTarget(AActor* Target, AWeapon* WeaponT
 {
 	if (!IsValid(Target) || !IsValid(WeaponToFire)) return;
 
-	WeaponToFire->FireWeapon(Target);
+	EWeaponType WeaponType = WeaponToFire->GetWeaponType();
+	
+	if(float* WeaponModifier = Modifiers.Find(WeaponType))
+		WeaponToFire->FireWeapon(Target, *WeaponModifier);
+	else
+		WeaponToFire->FireWeapon(Target, 0.f);
+
 	ReadyWeapons.Remove(WeaponToFire);
 	SetupWeaponCooldown(WeaponToFire);
 }
@@ -182,10 +201,15 @@ void UWeaponSystemComponent::FireWeaponToMultipleTargets(TArray<AActor*> Targets
 	if (Targets.IsEmpty() || !IsValid(WeaponToFire)) return;
 
 	const int32 NumberOfTargets = Targets.Num();
+	EWeaponType WeaponType		= WeaponToFire->GetWeaponType();
 
 	for (AActor* Target : Targets)
-		WeaponToFire->FireWeapon(Target);
+		if (float* WeaponModifier = Modifiers.Find(WeaponType))
+			WeaponToFire->FireWeapon(Target, *WeaponModifier);
+		else
+			WeaponToFire->FireWeapon(Target, 0.f);
 
+	UE_LOG(LogTemp, Warning, TEXT("FireTM"));
 
 	ReadyWeapons.Remove(WeaponToFire);
 	SetupWeaponCooldown(WeaponToFire);

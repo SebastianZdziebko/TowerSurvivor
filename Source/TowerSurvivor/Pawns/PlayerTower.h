@@ -14,6 +14,7 @@ class TOWERSURVIVOR_API APlayerTower : public APawn, public ICombatInterface
 
 	TEnumAsByte<ECollisionChannel> EnemyChannel{ ECC_GameTraceChannel2 };
 	TEnumAsByte<ECollisionChannel> TowerChannel{ ECC_GameTraceChannel3 };
+	TEnumAsByte<ECollisionChannel> ProjectileChannel{ ECC_GameTraceChannel4 };
 
 public:
 	APlayerTower();
@@ -23,10 +24,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)	class UStatsComponent* StatsComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)	class UWalletComponent* WalletComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)	class UWeaponSystemComponent* WeaponSystemComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)	class UUpgradeSystemComponent* UpgradeSystemComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)	class USpringArmComponent* SpringArm;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)	class UCameraComponent* CameraComp;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) AActor* Shop;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)		AActor*				Shop;
 protected:
 	virtual void BeginPlay() override;
 

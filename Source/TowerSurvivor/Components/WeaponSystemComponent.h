@@ -4,13 +4,15 @@
 #include "Components/ActorComponent.h"
 
 #include "TowerSurvivor/Interfaces/CombatInterface.h"
-#include "TowerSurvivor/Enums/ERange.h"
 
 #include "WeaponSystemComponent.generated.h"
 
 class AWeapon;
 class AEnemy;
 class USphereComponent;
+
+enum class EWeaponType : uint8;
+enum class ERange : uint8;
 
 USTRUCT(BlueprintType)
 struct FEnemyArray
@@ -32,17 +34,11 @@ class TOWERSURVIVOR_API UWeaponSystemComponent : public USceneComponent
 public:	
 	UWeaponSystemComponent();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon System")
-	TMap<ERange, USphereComponent*> RangeSpheres;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon System")
-	TArray<AWeapon*>			ReadyWeapons;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon System")
-	TArray<AWeapon*>			Weapons;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon System")
-	TMap<ERange, FEnemyArray>	EnemiesInRanges;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon System") TMap<ERange, USphereComponent*>	RangeSpheres;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon System") TArray<AWeapon*>					ReadyWeapons;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon System") TArray<AWeapon*>					Weapons;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon System") TMap<ERange, FEnemyArray>		EnemiesInRanges;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon System") TMap<EWeaponType, float>			Modifiers;
 
 protected:
 	virtual void BeginPlay() override;
@@ -55,6 +51,7 @@ public:
 	UFUNCTION()	void			RemoveEnemyFromRanges	(AEnemy* Enemy);
 
 	UFUNCTION(BlueprintCallable) void AddWeapon(TSubclassOf<AWeapon> WeaponToAdd);
+	UFUNCTION(BlueprintCallable) void IncreaseModifier(EWeaponType ModifierToIncrease, float Modifier);
 
 	UFUNCTION()	void SetupWeaponCooldown	(AWeapon* WeaponToSetup);
 	UFUNCTION()	void SetWeaponReadyToFire	(AWeapon* WeaponToSetReady);

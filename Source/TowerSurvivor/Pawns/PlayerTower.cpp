@@ -4,6 +4,7 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
+#include "TowerSurvivor/Components/UpgradeSystemComponent.h"
 #include "TowerSurvivor/Components/WeaponSystemComponent.h"
 #include "TowerSurvivor/Components/StatsComponent.h"
 #include "TowerSurvivor/Components/WalletComponent.h"
@@ -22,11 +23,15 @@ APlayerTower::APlayerTower()
 	CollisionComp	 -> SetCollisionResponseToAllChannels(ECR_Ignore);
 	CollisionComp	 -> SetCollisionObjectType(TowerChannel);
 	CollisionComp	 -> SetCollisionResponseToChannel(EnemyChannel, ECR_Overlap);
+	CollisionComp	 -> SetCollisionResponseToChannel(ProjectileChannel, ECR_Overlap);
+
 
 	StatsComp		 =  CreateDefaultSubobject<UStatsComponent>(TEXT("Stats"));
 
 	WeaponSystemComp =  CreateDefaultSubobject<UWeaponSystemComponent>(TEXT("Weapon System"));
 	WeaponSystemComp -> SetupAttachment(RootComponent);
+
+	UpgradeSystemComp = CreateDefaultSubobject<UUpgradeSystemComponent>(TEXT("Upgrade System"));
 
 	SpringArm		 =  CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
 	SpringArm		 -> SetupAttachment(RootComponent);

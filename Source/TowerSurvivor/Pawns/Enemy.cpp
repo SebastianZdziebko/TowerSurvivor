@@ -1,29 +1,31 @@
 #include "Enemy.h"
 
-
+#include "GameFramework/FloatingPawnMovement.h"
 #include "Components/WidgetComponent.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 #include "TowerSurvivor/Interfaces/CombatInterface.h"
 #include "TowerSurvivor/Components/StatsComponent.h"
-#include "TowerSurvivor/Components/EnemyMovementComponent.h"
+#include "TowerSurvivor/Controllers/EnemyMovementController.h"
 
 AEnemy::AEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	RootComponent	 =  CreateDefaultSubobject<USceneComponent>			(TEXT("Root Component"));
-	MovementComp	 =	CreateDefaultSubobject<UEnemyMovementComponent>	(TEXT("Movement Component"));
-
-	SkeletalMeshComp =  CreateDefaultSubobject<USkeletalMeshComponent>	(TEXT("Skeletal Mesh Component"));
-	SkeletalMeshComp ->	SetupAttachment(RootComponent);
-	SkeletalMeshComp -> SetCastShadow(false);
-
-	EnemyStatsComp	 =  CreateDefaultSubobject<UStatsComponent>			(TEXT("Stats Component"));
-
 	CollisionComp	 =  CreateDefaultSubobject<USphereComponent>		(TEXT("Collision Comp"));
-	CollisionComp	 -> SetupAttachment(RootComponent);
+	RootComponent	 =  CollisionComp;
+
+	MovementComp		= CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Movement Component"));
+	AIControllerClass	= AEnemyMovementController::StaticClass();
+	AutoPossessAI		= EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	SkeletalMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Skeletal Mesh Component"));
+	SkeletalMeshComp->SetupAttachment(RootComponent);
+	SkeletalMeshComp->SetCastShadow(false);
+
+	EnemyStatsComp = CreateDefaultSubobject<UStatsComponent>(TEXT("Stats Component"));
+
 	CollisionComp	 -> SetCollisionObjectType(EnemyChannel);
 	CollisionComp	 -> SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionComp	 -> SetGenerateOverlapEvents(true);
@@ -31,7 +33,7 @@ AEnemy::AEnemy()
 	CollisionComp	 -> SetCollisionResponseToChannel(RangeChannel, ECR_Overlap);
 	CollisionComp	 -> SetCollisionResponseToChannel(TowerChannel, ECR_Overlap);
 	CollisionComp	 -> SetCollisionResponseToChannel(ProjectileChannel, ECR_Overlap);
-	CollisionComp	 -> SetCollisionResponseToChannel(EnemyChannel, ECR_Overlap);
+	CollisionComp	 -> SetCollisionResponseToChannel(EnemyChannel, ECR_Block);
 	CollisionComp	 -> SetNotifyRigidBodyCollision(true);
 
 	HealthBarWidget	 =	CreateDefaultSubobject<UWidgetComponent>		(TEXT("Health Bar"));
@@ -39,19 +41,23 @@ AEnemy::AEnemy()
 
 	EnemyStatsComp	 -> OnZeroHealthDelegate.AddDynamic(this, &AEnemy::KillEnemy);
 	CollisionComp	 -> OnComponentBeginOverlap.AddDynamic(this, &AEnemy::TowerIsInRange);
-	MovementComp	 -> OnReachSinkMax.BindUObject(this, &AEnemy::RemoveFromGame);
 }
 
 void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetEnemyState(EEnemyState::Walking);
 	PlayerTower		= UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	TowerLocation	= PlayerTower->GetActorLocation();
 
-	if(MovementComp && EnemyStatsComp)
-		MovementComp->MovementSpeed = EnemyStatsComp->Stats[EStat::Speed];
+	if (MovementComp && EnemyStatsComp)
+	{
+		MovementComp->MaxSpeed = EnemyStatsComp->Stats[EStat::Speed];
+		MovementComp->Acceleration = 600.f;
+		MovementComp->Deceleration = 600.f;
+	}
+
+	SetEnemyState(EEnemyState::Walking);
 }
 
 void AEnemy::Tick(float DeltaTime)
@@ -62,13 +68,28 @@ void AEnemy::Tick(float DeltaTime)
 	{
 		case EEnemyState::Walking:
 		{
-			if (!IsValid(MovementComp)) return;
-			MovementComp->MoveTowardsTower(DeltaTime, TowerLocation, this);
+			FVector Velocity = GetVelocity();
+
+			if (!Velocity.IsNearlyZero())
+			{
+				Velocity.Z = 0.f;
+
+				FRotator TargetRotation = Velocity.Rotation();
+				FRotator FinalRotation  = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 10.f);
+
+				SetActorRotation(FinalRotation);
+			}
+
 			break;
 		}
 		case EEnemyState::Dying:
 		{
+			if (AController* EnemyController = GetController())
+				EnemyController->UnPossess();
+
 			const float FallingSpeed = 40.f;
+
+			AddActorWorldOffset(FVector(0.f, 0.f, -FallingSpeed * DeltaTime));
 
 			FVector LineStart	= GetActorLocation();
 			FVector LineEnd		= LineStart - FVector(0.f, 0.f, FallOffset);
@@ -79,8 +100,8 @@ void AEnemy::Tick(float DeltaTime)
 
 			bool bGroundInOffsetRange = GetWorld()->LineTraceSingleByChannel(Hit, LineStart, LineEnd, ECC_WorldStatic, Params);
 
-			if (!bGroundInOffsetRange) MovementComp->Sinking(DeltaTime, FallingSpeed, this);
-			else OverlapGround(nullptr, nullptr, nullptr, 0, false, FHitResult());
+			if (bGroundInOffsetRange) 
+				OverlapGround(nullptr, nullptr, nullptr, 0, false, FHitResult());
 
 			break;
 		}
@@ -88,11 +109,25 @@ void AEnemy::Tick(float DeltaTime)
 		{
 			const float FallingSpeed = 10.f;
 
-			MovementComp->Sinking(DeltaTime, FallingSpeed, this);
+			AddActorWorldOffset(FVector(0.f, 0.f, -FallingSpeed * DeltaTime));
+
 			break;
 		}
 		default:
+		{
+			FVector Velocity = GetVelocity();
+
+			if (!Velocity.IsNearlyZero())
+			{
+				Velocity.Z = 0.f;
+
+				FRotator TargetRotation = Velocity.Rotation();
+				FRotator FinalRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 10.f);
+
+				SetActorRotation(FinalRotation);
+			}
 			break;
+		}
 	}
 }
 
@@ -100,7 +135,13 @@ void AEnemy::TowerIsInRange(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 							UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 							bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherComp->GetCollisionObjectType() != TowerChannel) return;
+	if (!OtherComp) return;
+
+	if (OtherComp->GetCollisionObjectType() != TowerChannel &&
+		OtherComp->GetCollisionObjectType() != ECC_WorldDynamic) return;
+
+	if (AEnemyMovementController* EnemyController = Cast<AEnemyMovementController>(GetController()))
+		EnemyController->StopMovement();
 
 	GetWorldTimerManager().SetTimer
 	(
@@ -111,6 +152,9 @@ void AEnemy::TowerIsInRange(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 		true,
 		0.f
 	);
+
+	if(GetController())
+		GetController()->UnPossess();
 
 	SetEnemyState(EEnemyState::Waiting);
 }

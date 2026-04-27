@@ -8,13 +8,15 @@
 
 #include "UpgradeData.generated.h"
 
+class UUpgrade;
+
 UENUM(BlueprintType)
 enum class EUpgradeType : uint8
 {
 	None		UMETA(DisplayName = "None"),
 	Income		UMETA(DisplayName = "Income"),
 	Damage		UMETA(DisplayName = "Damage"),
-	Defence		UMETA(DisplayName = "Defence"),
+	Stats		UMETA(DisplayName = "Stats"),
 	Single		UMETA(DisplayName = "Single Use")
 };
 
@@ -24,18 +26,22 @@ class TOWERSURVIVOR_API UUpgradeData : public UDataAsset
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base") EUpgradeType				Type	{ EUpgradeType::None };
-	// INCOME type variables
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Income", meta = (EditCondition = "Type == EUpgradeType::Income", EditConditionHides)) int32		FlatIncome		{0};
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Income", meta = (EditCondition = "Type == EUpgradeType::Income", EditConditionHides)) float		IncomeModifier	{0.f};
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base")	EUpgradeType			Type	{ EUpgradeType::None };
 
-	// DAMAGE type variables
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage", meta = (EditCondition = "Type == EUpgradeType::Damage", EditConditionHides)) EWeaponType WeaponType		{ EWeaponType::None };
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage", meta = (EditCondition = "Type == EUpgradeType::Damage", EditConditionHides)) float		 DamageModifier	{ 0.f };
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base", meta = (EditCondition = "Type != EUpgradeType::Single", EditConditionHides))	int32			FlatValue		{ 0 };
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base", meta = (EditCondition = "Type != EUpgradeType::Single", EditConditionHides))	float			Modifier		{ 0.f };
 
-	// DEFENCE type variables
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Defence", meta = (EditCondition = "Type == EUpgradeType::Defence", EditConditionHides)) EStat	StatType		{ EStat::None };
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Defence", meta = (EditCondition = "Type == EUpgradeType::Defence", EditConditionHides)) int32	ChangeValue		{ 0 };
+	// Timer
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base", meta = (EditCondition = "Type != EUpgradeType::Single", EditConditionHides))				bool	bUseTimer		{ false };
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base", meta = (EditCondition = "Type != EUpgradeType::Single && bUseTimer", EditConditionHides))	float	UpgradePeriod	{ 0.f };
+
+	// DAMAGE variables
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage", meta = (EditCondition = "Type == EUpgradeType::Damage", EditConditionHides))
+	EWeaponType WeaponType	{ EWeaponType::None };
+
+	// STATS variables
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats", meta = (EditCondition = "Type == EUpgradeType::Stats", EditConditionHides))
+	EStat	StatType		{ EStat::None };
 
 	// SINGLE USE type variables
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Single Use", meta = (EditCondition = "Type == EUpgradeType::Single", EditConditionHides)) EStat	SpecialCostType { EStat::None };
